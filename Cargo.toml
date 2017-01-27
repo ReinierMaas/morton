@@ -1,0 +1,6 @@
+[package]
+name = "morton"
+version = "0.1.0"
+authors = ["Reinier Maas <reiniermaas@hotmail.com>"]
+
+[dependencies]
