@@ -1,6 +1,7 @@
+#![allow(unused_features)]
 #![feature(test)]
-extern crate rand;
-extern crate test;
+#[cfg(test)] extern crate rand;
+#[cfg(test)] extern crate test;
 
 // http://graphics.stanford.edu/~seander/bithacks.html#InterleaveBMN
 #[inline]

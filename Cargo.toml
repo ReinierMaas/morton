@@ -1,6 +1,6 @@
 [package]
 name = "morton"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Reinier Maas <reiniermaas@hotmail.com>"]
 
 # METADATA
@@ -48,4 +48,6 @@ opt-level = 3
 lto = true
 
 [dependencies]
+
+[dev-dependencies]
 rand = "0.3.15"
