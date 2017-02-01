@@ -3,6 +3,85 @@
 #[cfg(test)] extern crate rand;
 #[cfg(test)] extern crate test;
 
+pub struct MortonChunk<'m, T: 'm> {
+    morton_chunk: &'m mut [T],
+    side_length: usize,
+}
+
+impl<'m, T> MortonChunk<'m, T> {
+    pub fn new(morton_chunk: &mut [T], side_length: usize) -> MortonChunk<T> {
+        assert!(morton_chunk.len() == side_length * side_length);
+        MortonChunk {
+            morton_chunk: morton_chunk,
+            side_length: side_length,
+        }
+    }
+}
+pub struct Morton<'m, T: 'm> {
+    morton_chunks: Vec<MortonChunk<'m, T>>,
+    width: usize,
+    height: usize,
+    side_length: usize,
+}
+
+impl<'m, T> Morton<'m, T> {
+    pub fn new(width: usize, height: usize, data: &mut Vec<T>) -> Morton<'m, T> {
+        assert!(data.len() == width * height);
+        // greatest common single digit diviser
+        let mut side_length = 1;
+        {
+            let mut width = width;
+            let mut height = height;
+            while {
+                width >>= 1;
+                height >>= 1;
+                width > 0 && height > 0
+            } { side_length <<= 1; }
+            // side_length is minimum of both most significant bits
+            // side_length is now an upper bound of the binary gcd
+        }
+        while (width / side_length) * side_length < width || (height / side_length) * side_length < height  {
+            side_length >>= 1;
+        }
+        // side_length divides width and height in side_length equal parts
+
+        // convert data from linear to morton chunks
+        // need to create the vector with nones explicitly because T is not copyable
+        let mut backing_data: Vec<Option<T>> = Vec::with_capacity(width * height);
+        for _ in 0..width * height {
+            backing_data.push(None);
+        }
+        for (idx, element) in data.into_iter().enumerate() {
+            // calculate x and y coördinate of element
+            let x = idx % width;
+            let y = idx / width;
+            // which location should be assigned?
+            let start_index = (y / side_length) * side_length * width + (x / side_length) * side_length;
+            let morton_idx = interleave_morton((x % side_length) as u32, (y % side_length) as u32) as usize;
+            println!("x: {}, y: {}, start_index: {}, morton_idx: {}", x, y, start_index, morton_idx);
+            backing_data[start_index + morton_idx] = Some(element);
+        }
+        // make backing data of type T instead of Option<T>
+        let mut backing_data: Vec<T> = backing_data
+            .into_iter()
+            .map(|element| element.unwrap())
+            .collect();
+        // split morton chunks for easy iteration
+        let mut morton_chunks: Vec<MortonChunk<T>> = backing_data
+            .chunks_mut(side_length * side_length)
+            .map(|morton_chunk| MortonChunk::new(morton_chunk, side_length))
+            .collect();
+        assert!(morton_chunks.len() == (width / side_length) * (height / side_length));
+        Morton {
+            morton_chunks: morton_chunks,
+            width: width,
+            height: height,
+            side_length: side_length,
+        }
+    }
+}
+
+
 // http://graphics.stanford.edu/~seander/bithacks.html#InterleaveBMN
 #[inline]
 pub fn interleave_morton(x: u32, y: u32) -> u32 {
