@@ -62,6 +62,7 @@ impl<'m, T> Morton<'m, T> {
             backing_data_opt[start_index + morton_idx] = Some(element);
         }
         // make backing data of type T instead of Option<T>
+        backing_data.clear();
         backing_data.extend(backing_data_opt.into_iter().map(|element| element.unwrap()));
         // split morton chunks for easy iteration
         let mut morton_chunks: Vec<MortonChunk<_>> = backing_data
