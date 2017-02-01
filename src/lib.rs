@@ -3,6 +3,7 @@
 #[cfg(test)] extern crate rand;
 #[cfg(test)] extern crate test;
 
+#[derive(Debug)]
 pub struct MortonChunk<'m, T: 'm> {
     morton_chunk: &'m mut [T],
     side_length: usize,
@@ -17,7 +18,10 @@ impl<'m, T> MortonChunk<'m, T> {
         }
     }
 }
+
+#[derive(Debug)]
 pub struct Morton<'m, T: 'm> {
+    backing_data: std::cell::UnsafeCell<Vec<T>>, // holds the data that is used by morton chunks
     morton_chunks: Vec<MortonChunk<'m, T>>,
     width: usize,
     height: usize,
@@ -25,7 +29,7 @@ pub struct Morton<'m, T: 'm> {
 }
 
 impl<'m, T> Morton<'m, T> {
-    pub fn new(width: usize, height: usize, data: Vec<T>, backing_data: &'m mut Vec<T>) -> Morton<'m, T> {
+    pub fn new(width: usize, height: usize, data: Vec<T>) -> Morton<'m, T> {
         assert!(data.len() == width * height);
         // greatest common single digit diviser
         let mut side_length = 1;
@@ -62,15 +66,21 @@ impl<'m, T> Morton<'m, T> {
             backing_data_opt[start_index + morton_idx] = Some(element);
         }
         // make backing data of type T instead of Option<T>
-        backing_data.clear();
-        backing_data.extend(backing_data_opt.into_iter().map(|element| element.unwrap()));
-        // split morton chunks for easy iteration
-        let mut morton_chunks: Vec<MortonChunk<_>> = backing_data
-            .chunks_mut(side_length * side_length)
-            .map(|morton_chunk| MortonChunk::new(morton_chunk, side_length))
-            .collect();
+        // backing data needs to be saved with the morton struct while the mut references are used by the chunks
+        let mut backing_data: std::cell::UnsafeCell<Vec<T>> = std::cell::UnsafeCell::new(Vec::with_capacity(width * height));
+        let mut morton_chunks: Vec<MortonChunk<T>> = Vec::with_capacity((width / side_length) * (height / side_length));
+        unsafe{
+            let ref mut backing_data = *backing_data.get();
+            backing_data.extend(backing_data_opt.into_iter().map(|element| element.unwrap()));
+            // split morton chunks for easy iteration
+            morton_chunks = backing_data
+                .chunks_mut(side_length * side_length)
+                .map(|morton_chunk| MortonChunk::new(morton_chunk, side_length))
+                .collect();
+        }
         assert!(morton_chunks.len() == (width / side_length) * (height / side_length));
         Morton {
+            backing_data: backing_data,
             morton_chunks: morton_chunks,
             width: width,
             height: height,
