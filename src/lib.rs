@@ -25,7 +25,7 @@ pub struct Morton<'m, T: 'm> {
 }
 
 impl<'m, T> Morton<'m, T> {
-    pub fn new(width: usize, height: usize, mut data: Vec<T>) -> Morton<'m, T> {
+    pub fn new(width: usize, height: usize, data: Vec<T>, backing_data: &'m mut Vec<T>) -> Morton<'m, T> {
         assert!(data.len() == width * height);
         // greatest common single digit diviser
         let mut side_length = 1;
@@ -47,9 +47,9 @@ impl<'m, T> Morton<'m, T> {
 
         // convert data from linear to morton chunks
         // need to create the vector with nones explicitly because T is not copyable
-        let mut backing_data: Vec<Option<T>> = Vec::with_capacity(width * height);
+        let mut backing_data_opt: Vec<Option<_>> = Vec::with_capacity(width * height);
         for _ in 0..width * height {
-            backing_data.push(None);
+            backing_data_opt.push(None);
         }
         for (idx, element) in data.into_iter().enumerate() {
             // calculate x and y coördinate of element
@@ -59,15 +59,12 @@ impl<'m, T> Morton<'m, T> {
             let start_index = (y / side_length) * side_length * width + (x / side_length) * side_length;
             let morton_idx = interleave_morton((x % side_length) as u32, (y % side_length) as u32) as usize;
             println!("x: {}, y: {}, start_index: {}, morton_idx: {}", x, y, start_index, morton_idx);
-            backing_data[start_index + morton_idx] = Some(element);
+            backing_data_opt[start_index + morton_idx] = Some(element);
         }
         // make backing data of type T instead of Option<T>
-        let mut backing_data: Vec<T> = backing_data
-            .into_iter()
-            .map(|element| element.unwrap())
-            .collect();
+        backing_data.extend(backing_data_opt.into_iter().map(|element| element.unwrap()));
         // split morton chunks for easy iteration
-        let mut morton_chunks: Vec<MortonChunk<T>> = backing_data
+        let mut morton_chunks: Vec<MortonChunk<_>> = backing_data
             .chunks_mut(side_length * side_length)
             .map(|morton_chunk| MortonChunk::new(morton_chunk, side_length))
             .collect();
