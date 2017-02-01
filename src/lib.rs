@@ -25,7 +25,7 @@ pub struct Morton<'m, T: 'm> {
 }
 
 impl<'m, T> Morton<'m, T> {
-    pub fn new(width: usize, height: usize, data: &mut Vec<T>) -> Morton<'m, T> {
+    pub fn new(width: usize, height: usize, mut data: Vec<T>) -> Morton<'m, T> {
         assert!(data.len() == width * height);
         // greatest common single digit diviser
         let mut side_length = 1;
