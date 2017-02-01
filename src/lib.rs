@@ -25,19 +25,34 @@ pub fn interleave_morton(x: u32, y: u32) -> u32 {
 // http://stackoverflow.com/questions/4909263/how-to-efficiently-de-interleave-bits-inverse-morton
 #[inline]
 pub fn deinterleave_morton(z: u32) -> (u32, u32) {
-      let x = z & 0x55555555;
-      let x = (x | (x >> 1)) & 0x33333333;
-      let x = (x | (x >> 2)) & 0x0F0F0F0F;
-      let x = (x | (x >> 4)) & 0x00FF00FF;
-      let x = (x | (x >> 8)) & 0x0000FFFF;
+      if cfg!(target_pointer_width = "64") {
+        let z = z as u64;
 
-      let y = (z >> 1) & 0x55555555;
-      let y = (y | (y >> 1)) & 0x33333333;
-      let y = (y | (y >> 2)) & 0x0F0F0F0F;
-      let y = (y | (y >> 4)) & 0x00FF00FF;
-      let y = (y | (y >> 8)) & 0x0000FFFF;
+        let z = (z | (z << 31)) & 0x55555555_55555555;
+        let z = (z | (z >> 1)) & 0x33333333_33333333;
+        let z = (z | (z >> 2)) & 0x0F0F0F0F_0F0F0F0F;
+        let z = (z | (z >> 4)) & 0x00FF00FF_00FF00FF;
+        let z = (z | (z >> 8)) & 0x0000FFFF_0000FFFF;
 
-      (x,y)
+        let x = (z & 0x00000000_0000FFFF) as u32;
+        let y = ((z >> 32) & 0x00000000_0000FFFF) as u32;
+
+        (x,y)
+      } else {
+        let x = z & 0x55555555;
+        let x = (x | (x >> 1)) & 0x33333333;
+        let x = (x | (x >> 2)) & 0x0F0F0F0F;
+        let x = (x | (x >> 4)) & 0x00FF00FF;
+        let x = (x | (x >> 8)) & 0x0000FFFF;
+
+        let y = (z >> 1) & 0x55555555;
+        let y = (y | (y >> 1)) & 0x33333333;
+        let y = (y | (y >> 2)) & 0x0F0F0F0F;
+        let y = (y | (y >> 4)) & 0x00FF00FF;
+        let y = (y | (y >> 8)) & 0x0000FFFF;
+
+        (x,y)
+      }
 }
 
 #[cfg(test)]
