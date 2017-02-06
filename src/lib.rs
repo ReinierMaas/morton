@@ -20,6 +20,25 @@ impl<'m, T> MortonChunk<'m, T> {
 }
 
 #[derive(Debug)]
+pub struct MortonChunkIterator<'m, T: 'm> {
+    morton_chunk: &'m MortonChunk<'m, T>,
+    morton_index: usize,
+}
+
+impl<'m, T> Iterator for MortonChunkIterator<'m, T> {
+    type Item = &'m T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let result = if self.morton_index < self.morton_chunk.morton_chunk.len() {
+            Some(&self.morton_chunk.morton_chunk[self.morton_index])
+        } else {
+            None
+        };
+        self.morton_index += 1;
+        result
+    }
+}
+
+#[derive(Debug)]
 pub struct Morton<'m, T: 'm> {
     backing_data: std::cell::UnsafeCell<Vec<T>>, // holds the data that is used by morton chunks
     morton_chunks: Vec<MortonChunk<'m, T>>,
@@ -86,6 +105,25 @@ impl<'m, T> Morton<'m, T> {
             height: height,
             side_length: side_length,
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct MortonIterator<'m, T: 'm> {
+    morton_chunk: &'m Morton<'m, T>,
+    morton_index: usize,
+}
+
+impl<'m, T> Iterator for MortonIterator<'m, T> {
+    type Item = &'m T;
+    fn next(&mut self) -> Option<Self::Item> {
+        let result = if self.morton_index < self.morton_chunk.morton_chunk.len() {
+            Some(&self.morton_chunk.morton_chunk[self.morton_index])
+        } else {
+            None
+        };
+        self.morton_index += 1;
+        result
     }
 }
 
