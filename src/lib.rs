@@ -3,6 +3,136 @@
 #[cfg(test)] extern crate rand;
 #[cfg(test)] extern crate test;
 
+#[derive(Debug)]
+pub struct MortonChunk<'m, T: 'm> {
+    morton_chunk: &'m mut [T],
+    x: usize,
+    y: usize,
+}
+
+impl<'m, T> MortonChunk<'m, T> {
+    pub fn new(morton_chunk: &mut [T], x: usize, y: usize) -> MortonChunk<T> {
+        assert!(morton_chunk.len() == (((morton_chunk.len() as f64).sqrt() as usize) as f64).powi(2) as usize);
+        MortonChunk {
+            morton_chunk: morton_chunk,
+            x: x,
+            y: y,
+        }
+    }
+}
+
+//#[derive(Debug)]
+//pub struct MortonChunkIterator<'m, T: 'm> {
+//    morton_chunk: &'m MortonChunk<'m, T>,
+//    morton_index: usize,
+//}
+//
+//impl<'m, T> Iterator for MortonChunkIterator<'m, T> {
+//    type Item = &'m T;
+//    fn next(&mut self) -> Option<Self::Item> {
+//        let result = if self.morton_index < self.morton_chunk.morton_chunk.len() {
+//            Some(&self.morton_chunk.morton_chunk[self.morton_index])
+//        } else {
+//            None
+//        };
+//        self.morton_index += 1;
+//        result
+//    }
+//}
+
+#[derive(Debug)]
+pub struct Morton<'m, T: 'm> {
+    backing_data: std::cell::UnsafeCell<Vec<T>>, // holds the data that is used by morton chunks
+    morton_chunks: Vec<MortonChunk<'m, T>>,
+    width: usize,
+    height: usize,
+    morton_side_length: usize,
+}
+
+impl<'m, T> Morton<'m, T> {
+    pub fn new(width: usize, height: usize, data: Vec<T>) -> Morton<'m, T> {
+        assert!(data.len() == width * height);
+        // greatest common single digit diviser
+        let mut morton_side_length = 1;
+        {
+            let mut width = width;
+            let mut height = height;
+            while {
+                width >>= 1;
+                height >>= 1;
+                width > 0 && height > 0 && morton_side_length <= (std::u16::MAX as usize) // To make sure something % morton_side_length fits in an u16
+            } { morton_side_length <<= 1; }
+            // morton_side_length is minimum of both most significant bits
+            // morton_side_length is now an upper bound of the binary gcd
+        }
+        while (width / morton_side_length) * morton_side_length < width || (height / morton_side_length) * morton_side_length < height  {
+            morton_side_length >>= 1;
+        }
+        // morton_side_length divides width and height in morton_side_length equal parts
+
+        // convert data from linear to morton chunks
+        // need to create the vector with nones explicitly because T is not copyable
+        let mut backing_data_opt: Vec<Option<_>> = Vec::with_capacity(width * height);
+        for _ in 0..width * height {
+            backing_data_opt.push(None);
+        }
+        for (idx, element) in data.into_iter().enumerate() {
+            // calculate x and y coördinate of element
+            let x = idx % width;
+            let y = idx / width;
+            // which location should be assigned?
+            let start_index = (y / morton_side_length) * morton_side_length * width + (x / morton_side_length) * morton_side_length;
+            let morton_idx = interleave_morton((x % morton_side_length) as u16, (y % morton_side_length) as u16) as usize;
+            println!("x: {}, y: {}, start_index: {}, morton_idx: {}", x, y, start_index, morton_idx);
+            backing_data_opt[start_index + morton_idx] = Some(element);
+        }
+        // make backing data of type T instead of Option<T>
+        // backing data needs to be saved with the morton struct while the mut references are used by the chunks
+        let backing_data: std::cell::UnsafeCell<Vec<T>> = std::cell::UnsafeCell::new(Vec::with_capacity(width * height));
+        let morton_chunks: Vec<MortonChunk<T>>;
+        unsafe{
+            let ref mut backing_data = *backing_data.get();
+            backing_data.extend(backing_data_opt.into_iter().map(|element| element.unwrap()));
+            // split morton chunks for easy iteration
+            let morton_width = width / morton_side_length;
+
+            morton_chunks = backing_data
+                .chunks_mut(morton_side_length * morton_side_length)
+                .enumerate()
+                .map(|(morton_idx, morton_chunk)| MortonChunk::new(morton_chunk, morton_idx % morton_width, morton_idx / morton_width))
+                .collect();
+        }
+        assert!(morton_chunks.len() == (width / morton_side_length) * (height / morton_side_length));
+        Morton {
+            backing_data: backing_data,
+            morton_chunks: morton_chunks,
+            width: width,
+            height: height,
+            morton_side_length: morton_side_length,
+        }
+    }
+}
+
+//#[derive(Debug)]
+//pub struct MortonIterator<'m, T: 'm> {
+//    morton_chunk: &'m Morton<'m, T>,
+//    morton_index: usize,
+//}
+//
+//impl<'m, T> Iterator for MortonIterator<'m, T> {
+//    type Item = &'m T;
+//    fn next(&mut self) -> Option<Self::Item> {
+//        let result = if self.morton_index < self.morton_chunk.morton_chunk.len() {
+//            Some(&self.morton_chunk.morton_chunk[self.morton_index])
+//        } else {
+//            None
+//        };
+//        self.morton_index += 1;
+//        result
+//    }
+//}
+
+
 // http://graphics.stanford.edu/~seander/bithacks.html#InterleaveBMN
 #[inline]
 pub fn interleave_morton(x: u16, y: u16) -> u32 {
