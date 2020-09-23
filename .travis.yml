@@ -6,14 +6,12 @@ rust:
   - nightly
 before_script:
   - cargo install cargo-audit
-  - cargo install cargo-tarpaulin
   - rustup component add clippy
   - rustup component add rustfmt
 script:
   - cargo audit
   - cargo clippy -- -D warnings
   - cargo fmt --all -- --check
-  - cargo tarpaulin --ignore-tests
 
   - cargo build
   - cargo test
