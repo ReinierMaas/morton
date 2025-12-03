@@ -3,7 +3,7 @@
 /// Uses bithacks as described in:
 /// http://graphics.stanford.edu/~seander/bithacks.html#InterleaveBMN
 #[inline]
-pub fn interleave_morton(x: u16, y: u16) -> u32 {
+pub const fn interleave_morton(x: u16, y: u16) -> u32 {
     if cfg!(target_pointer_width = "64") {
         let x = x as u64;
         let y = y as u64;
@@ -38,7 +38,7 @@ pub fn interleave_morton(x: u16, y: u16) -> u32 {
 /// Uses bithacks as described in:
 /// http://stackoverflow.com/questions/4909263/how-to-efficiently-de-interleave-bits-inverse-morton
 #[inline]
-pub fn deinterleave_morton(z: u32) -> (u16, u16) {
+pub const fn deinterleave_morton(z: u32) -> (u16, u16) {
     if cfg!(target_pointer_width = "64") {
         let z = z as u64;
 
