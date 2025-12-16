@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 
 use morton::utils::{idx_tile, idx_tile_tuple};
 use morton::{deinterleave_morton, interleave_morton};
@@ -10,7 +10,7 @@ fn interleave() {
                                         // fill tiles with same random numbers
     for x in 0..32 {
         for y in 0..32 {
-            let random = thread_rng().gen::<u32>();
+            let random = rng().random::<u32>();
             tile_morton[interleave_morton(x as u16, y as u16) as usize] = random;
             tile_normal[idx_tile(x, y, 32)] = random;
         }
@@ -33,7 +33,7 @@ fn deinterleave() {
                                         // fill tiles with same random numbers
     for x in 0..32 {
         for y in 0..32 {
-            let random = thread_rng().gen::<u32>();
+            let random = rng().random::<u32>();
             tile_morton[interleave_morton(x as u16, y as u16) as usize] = random;
             tile_normal[idx_tile(x, y, 32)] = random;
         }
@@ -71,8 +71,8 @@ fn interleave_deinterleave() {
 #[test]
 fn rand_interleave_deinterleave_1000() {
     for _ in 0..1024 {
-        let x = thread_rng().gen::<u16>();
-        let y = thread_rng().gen::<u16>();
+        let x = rng().random::<u16>();
+        let y = rng().random::<u16>();
         let morton = interleave_morton(x, y);
         let (d_x, d_y) = deinterleave_morton(morton);
         assert!(d_x == x && d_y == y);
@@ -82,7 +82,7 @@ fn rand_interleave_deinterleave_1000() {
 #[test]
 fn rand_deinterleave_interleave_1000() {
     for _ in 0..1024 {
-        let z = thread_rng().gen::<u32>();
+        let z = rng().random::<u32>();
         let (x, y) = deinterleave_morton(z);
         let morton = interleave_morton(x, y);
         assert!(morton == z);

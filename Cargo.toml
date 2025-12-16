@@ -1,6 +1,6 @@
 [package]
 name = "morton"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Reinier Maas <reiniermaas@hotmail.com>"]
 edition = "2018"
 
@@ -19,7 +19,7 @@ name = "morton"
 
 [dev-dependencies]
 bencher = "0.1"
-rand = "0.7"
+rand = "0.9"
 
 [lints.clippy]
 cargo =  { level = "warn", priority = -1 }
