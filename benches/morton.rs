@@ -89,12 +89,12 @@ fn morton_access_normal(b: &mut Bencher) {
                                                 // fill tiles with some random numbers
     for z in 0..2048 * 2048 {
         let random = thread_rng().gen::<u32>();
-        tile_morton[idx_tile_tuple(deinterleave_morton(z), 2048) as usize] = random;
+        tile_morton[idx_tile_tuple(deinterleave_morton(z), 2048)] = random;
     }
     // bench horizontal access (x direction)
     b.iter(|| {
         for z in 0..2048 * 2048 {
-            black_box(tile_morton[idx_tile_tuple(deinterleave_morton(z), 2048) as usize]);
+            black_box(tile_morton[idx_tile_tuple(deinterleave_morton(z), 2048)]);
         }
     });
 }
