@@ -21,7 +21,7 @@ name = "morton"
 bencher = "0.1"
 rand = "0.7"
 
-[workspace.lints.clippy]
+[lints.clippy]
 cargo =  { level = "warn", priority = -1 }
 complexity = { level = "warn", priority = -1 }
 correctness = { level = "deny", priority = -1 }
