@@ -42,7 +42,7 @@ fn deinterleave() {
     // (morton curve did not override it's own elements)
     for z in 0..1024 {
         let morton = tile_morton[z];
-        let normal = tile_normal[idx_tile_tuple(deinterleave_morton(z as u32), 32) as usize];
+        let normal = tile_normal[idx_tile_tuple(deinterleave_morton(z as u32), 32)];
         assert!(morton == normal);
     }
 }

@@ -78,7 +78,7 @@ fn vertical_access_normal(b: &mut Bencher) {
     b.iter(|| {
         for x in 0..2048 {
             for y in 0..2048 {
-                black_box(tile_normal[idx_tile(x, y, 2048) as usize]);
+                black_box(tile_normal[idx_tile(x, y, 2048)]);
             }
         }
     });
@@ -137,6 +137,7 @@ fn vertical_access_morton(b: &mut Bencher) {
     });
 }
 
+#[allow(clippy::needless_range_loop, reason = "access direction clarity")]
 fn morton_access_morton(b: &mut Bencher) {
     let mut tile_morton = vec![0; 2048 * 2048]; // 16MB allocate more then largest cache
                                                 // fill tiles with some random numbers
